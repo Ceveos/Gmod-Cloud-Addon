@@ -5,6 +5,9 @@
 ------------------------------------------
 --               CONSTANTS              --
 ------------------------------------------
+-- Data directory
+local BASEDIRECTORY = "GmodCloud/"
+
 -- Server info
 local baseApiUrl = "https://gmodcloud.com/api/"
 
@@ -50,6 +53,35 @@ function GmodCloud:PrintError(message)
   if (GmodCloud.DebugLevel <= 3) then
     MsgC("[GmodCloud] ", red, "[ERROR] ", message, "\n")
   end
+end
+
+
+------------------------------------------
+--             FILE FUNCTIONS           --
+------------------------------------------
+
+function GmodCloud:ReadFile(filename) 
+  return file.Read(BASEDIRECTORY .. filename, "DATA")
+end
+
+function GmodCloud:WriteFile(filename, content)
+  if !file.Exists(BASEDIRECTORY, "DATA") then
+    file.CreateDir(BASEDIRECTORY)
+  end
+
+  file.Write(BASEDIRECTORY .. filename, content) 
+end
+
+------------------------------------------
+--             DATA FUNCTIONS           --
+------------------------------------------
+
+function GmodCloud:GetServerId() 
+  return GmodCloud:ReadFile("ServerId.txt")
+end
+
+function GmodCloud:SetServerId(serverId) 
+  return GmodCloud:WriteFile("ServerId.txt", serverId)
 end
 
 
