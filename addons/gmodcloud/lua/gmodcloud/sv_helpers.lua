@@ -97,7 +97,7 @@ end
 function GmodCloud:PostData(path, args, success, fail) 
   -- Add required args
   local postArgs = args or {}
-  postArgs.owner = GmodCloud.ServerInfo.ownerUid or "INVALID"
+  postArgs.owner = GmodCloud.ServerInfo.owner or "INVALID"
   postArgs.apiKey = GmodCloud.ServerInfo.apiKey or "INVALID"
 
   -- Get complete url

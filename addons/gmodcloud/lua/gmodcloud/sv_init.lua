@@ -61,7 +61,7 @@ local function initialize()
     GmodCloud:PrintInfo("Attempting to register")
 
     -- Get a new server ID
-    GmodCloud:PostData("servers/register", GmodCloud.ServerInfo, GMODCLOUD_INIT, GMODCLOUD_RESP_FAIL)
+    GmodCloud:PostData("server/register", {serverName = GetHostName(), ip = game.GetIPAddress()}, GMODCLOUD_INIT, GMODCLOUD_RESP_FAIL)
   else 
     GmodCloud:PrintInfo("Server registration information found")
     GmodCloud:PrintInfo("Pinging Gmod Cloud")
@@ -70,7 +70,13 @@ end
 
 -- Test function to see if we can get data from Gmod Cloud
 local function onGmodCloudInitResp(result)
-  GmodCloud:PrintSuccess("[Init] Got from the server: " .. result)
+  GmodCloud:Print("[Init] Got from the server: " .. result)
+  local resp = util.JSONToTable(result)
+  if resp.error then
+    GmodCloud:PrintError(resp.errorMsg)
+  else 
+    GmodCloud:PrintSuccess("Server ID: " .. resp.serverId)
+  end
 end
 
 -- Test function to see if we fail to get data from Gmod Cloud
