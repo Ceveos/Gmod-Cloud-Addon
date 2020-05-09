@@ -87,12 +87,25 @@ local function initialize()
     -- Get a new server ID
     GmodCloud:PostData("server/register", {
       serverName = GetHostName(),
-      map = game.GetMap()
+      map = game.GetMap(),
+      ip = game.GetIPAddress(),
+      gameMode = gmod.GetGamemode().Name
     }, GMODCLOUD_SERVER_REGISTERED, GMODCLOUD_RESP_FAIL)
   else 
     GmodCloud:PrintInfo("Server registration information found")
     initialized = true
     hook.Run(GMODCLOUD_INIT_COMPLETED)
+  end
+end
+
+-- There is a bug where game.GetIPAddress() returns 0.0.0.0:PORT
+-- Wait until the IP is valid
+local function canInitialize()
+  local ip = game.GetIPAddress()
+  if !string.StartWith(ip, "0.") then
+    initialize()
+  else
+    timer.Simple(0, function() canInitialize() end )
   end
 end
 
@@ -103,5 +116,7 @@ hook.Add(GMODCLOUD_SERVER_REGISTERED, GMODCLOUD, onGmodCloudServerRegistered)
 hook.Add(GMODCLOUD_RESP_FAIL, GMODCLOUD, onGmodCloudRespFail)
 
 hook.Add(GMODCLOUD_INIT_COMPLETED, GMODCLOUD, pingGmodCloud)
+
+-- hook.Add("Think", "GmodCloudCanInit", canInitialize)
 -- We have to initialize after this timer since Steam IHTTP is not available beforehand
-timer.Simple(0, function() initialize() end )
+timer.Simple(0, function() canInitialize() end )

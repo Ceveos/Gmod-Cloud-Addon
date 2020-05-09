@@ -26,6 +26,9 @@ GmodCloud.DebugLevel = 0
 GmodCloud.ServerInfo = {
   -- Steam ID of the server owner
   -- MUST BE THE OWNER WHO PURCHASED THE ADDON 
+  -- YOU CANNOT CHANGE THIS TO BE YOUR FRIENDS STEAM ID
+  -- YOU _BOTH_ WILL BE BANNED
+  -- Please file a ticket if you need this changed
   owner = "76561197989847517", -- Temp
   apiKey = "TEST" -- Temp
 } 
