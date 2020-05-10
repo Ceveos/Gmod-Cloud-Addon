@@ -11,6 +11,7 @@ local GMODCLOUD_INIT = "GMODCLOUD_INIT" --
 local GMODCLOUD_SERVER_REGISTERED = "GMODCLOUD_SERVER_REGISTERED" -- fired whenever a server is registered on Gmod Cloud
 local GMODCLOUD_INIT_COMPLETED = "GMODCLOUD_INIT_COMPLETED" -- Hook name for when initializing completed
 local GMODCLOUD_RESP_FAIL = "GMODCLOUD_RESP_FAIL" -- Hook name for when there's an API response failure
+local GMODCLOUD_PING_RESP = "GMODCLOUD_PING_RESP" -- Hook name for when a ping is finished
 
 ---------------------------------------
 --            Local Vars             --
@@ -38,11 +39,44 @@ end
 --          Local Functions          --
 ---------------------------------------
 
+-- Get basic server information that will be used
+-- to register the server on GmodCloud and keep
+-- it up to date
+local function getServerPingInformation() 
+  
+  -------------------------- INFO ------------------------------
+  -- All these fields are marked as required by the API
+  -- You are free to add custom fields which will be stored.
+  --------------------------------------------------------------
+  -- There is no current way to use the extra fields defined.
+  --------------------------------------------------------------
+  return {
+    serverName = GetHostName(),                 -- REQUIRED
+    ip = game.GetIPAddress(),                   -- REQUIRED
+    maxPlayers = tostring(game.MaxPlayers()),   -- REQUIRED
+    gameMode = gmod.GetGamemode().Name,         -- REQUIRED
+    map = game.GetMap()                         -- REQUIRED
+  }
+end
+
 -- Called on startup and periodically to ping Gmod Cloud for updates
 local function pingGmodCloud()
   GmodCloud:PrintInfo("Pinging Gmod Cloud")
+  
+  -- Ping server
+  GmodCloud:PostData("server/ping", getServerPingInformation(), GMODCLOUD_PING_RESP, GMODCLOUD_RESP_FAIL)
 end
 
+
+-- Ping response
+local function onGmodCloudPingResponse(result)
+  local resp = util.JSONToTable(result)
+  if resp.error then
+    GmodCloud:PrintError("[Ping] " .. resp.errorMsg)
+  else 
+    GmodCloud:Print("[Ping] Successful ping")
+  end
+end
 
 -- Whenever the server is first registered on GmodCloud
 local function onGmodCloudServerRegistered(result)
@@ -52,7 +86,7 @@ local function onGmodCloudServerRegistered(result)
     GmodCloud:PrintError(resp.errorMsg)
   else 
     GmodCloud:PrintSuccess("Registered! Server ID: " .. resp.serverId)
-    GmodCloud:SetServerId(resp.serverId)
+    GmodCloud:SetServerInfo(resp.serverId, resp.secretKey)
     initialized = true
     hook.Run(GMODCLOUD_INIT_COMPLETED)
   end
@@ -77,24 +111,17 @@ local function initialize()
 
   GmodCloud:Print("Attempting to initialize")
 
-  local serverId = GmodCloud:GetServerId() 
-
-  if serverId == nil then
+  if GmodCloud:ServerInfoExists() then
+    GmodCloud:PrintInfo("Server registration information found")
+    initialized = true
+    hook.Run(GMODCLOUD_INIT_COMPLETED)
+  else 
     -- Need to register server on website
     GmodCloud:PrintInfo("Server not registered on GmodCloud")
     GmodCloud:PrintInfo("Attempting to register")
 
-    -- Get a new server ID
-    GmodCloud:PostData("server/register", {
-      serverName = GetHostName(),
-      map = game.GetMap(),
-      ip = game.GetIPAddress(),
-      gameMode = gmod.GetGamemode().Name
-    }, GMODCLOUD_SERVER_REGISTERED, GMODCLOUD_RESP_FAIL)
-  else 
-    GmodCloud:PrintInfo("Server registration information found")
-    initialized = true
-    hook.Run(GMODCLOUD_INIT_COMPLETED)
+    -- Get a server ID
+    GmodCloud:PostData("server/register", getServerPingInformation(), GMODCLOUD_SERVER_REGISTERED, GMODCLOUD_RESP_FAIL)
   end
 end
 
@@ -116,7 +143,7 @@ hook.Add(GMODCLOUD_SERVER_REGISTERED, GMODCLOUD, onGmodCloudServerRegistered)
 hook.Add(GMODCLOUD_RESP_FAIL, GMODCLOUD, onGmodCloudRespFail)
 
 hook.Add(GMODCLOUD_INIT_COMPLETED, GMODCLOUD, pingGmodCloud)
+hook.Add(GMODCLOUD_PING_RESP, GMODCLOUD, onGmodCloudPingResponse)
 
--- hook.Add("Think", "GmodCloudCanInit", canInitialize)
 -- We have to initialize after this timer since Steam IHTTP is not available beforehand
 timer.Simple(0, function() canInitialize() end )

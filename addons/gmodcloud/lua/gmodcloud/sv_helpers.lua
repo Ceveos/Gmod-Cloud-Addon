@@ -10,6 +10,8 @@ local BASEDIRECTORY = "GmodCloud/"
 
 -- Server info
 local baseApiUrl = "https://gmodcloud.com/api/"
+local serverInfo = nil
+local serverInfoExists = nil
 
 -- Colors
 local red = Color(255,0,0)
@@ -60,6 +62,10 @@ end
 --             FILE FUNCTIONS           --
 ------------------------------------------
 
+function GmodCloud:FileExists(filename) 
+  return file.Exists(BASEDIRECTORY .. filename, "DATA")
+end
+
 function GmodCloud:ReadFile(filename) 
   return file.Read(BASEDIRECTORY .. filename, "DATA")
 end
@@ -76,12 +82,22 @@ end
 --             DATA FUNCTIONS           --
 ------------------------------------------
 
-function GmodCloud:GetServerId() 
-  return GmodCloud:ReadFile("ServerId.txt")
+function GmodCloud:ServerInfoExists() 
+  return GmodCloud:FileExists("server.json")
 end
 
-function GmodCloud:SetServerId(serverId) 
-  return GmodCloud:WriteFile("ServerId.txt", serverId)
+function GmodCloud:GetServerInfo() 
+  return util.JSONToTable(GmodCloud:ReadFile("server.json"))
+end
+
+function GmodCloud:SetServerInfo(serverId, secretKey) 
+  return GmodCloud:WriteFile("server.json", 
+    util.TableToJSON(
+      {
+        serverId =  serverId,
+        secretKey = secretKey
+      }
+    ))
 end
 
 
@@ -124,21 +140,38 @@ function GmodCloud:FetchData(path, success, fail)
   end)
 end
 
+
 -- send a post request to Gmod Cloud's API server
 -- On result, run a hook or function
 function GmodCloud:PostData(path, args, success, fail) 
   -- Add required args
-  local postArgs = args or {}
-  postArgs.owner = GmodCloud.ServerInfo.owner or "INVALID"
-  postArgs.apiKey = GmodCloud.ServerInfo.apiKey or "INVALID"
+  local postArgs = {
+    owner = GmodCloud.ServerInfo.owner or "INVALID",
+    apiKey = GmodCloud.ServerInfo.apiKey or "INVALID",
+    attributes = util.TableToJSON(args)
+  }
 
   -- Get complete url
   local completeUrl = baseApiUrl .. path
+  
+  -- Use a var to save us from constantly reading a file
+  if serverInfoExists == nil then
+    serverInfoExists = GmodCloud:ServerInfoExists() 
+  end
+
+  if (serverInfo == nil and serverInfoExists) then
+    serverInfo = GmodCloud:GetServerInfo()
+  end
+
+  if (serverInfo != nil and serverInfo.serverId != nil and serverInfo.secretKey != nil) then
+    postArgs.secretKey = serverInfo.secretKey
+    completeUrl = completeUrl .. "/" .. serverInfo.serverId
+  end
+
   GmodCloud:Print("[POST] Querying " .. completeUrl)
 
   -- Perform post request
   http.Post(completeUrl, postArgs, function(result)
-
     if success and type(success) == "string" then 
       GmodCloud:Print("[POST] [SUCCESS] Calling hook: " .. success)
       hook.Run(success, result)
