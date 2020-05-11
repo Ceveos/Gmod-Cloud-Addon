@@ -9,6 +9,7 @@ if (CLIENT) then return end
 GmodCloud = GmodCloud or {}
 
 include("sv_config.lua")
+include("gmodcloud/sv_base.lua")
 include("gmodcloud/sv_helpers.lua")
 include("gmodcloud/sv_init.lua")
 

@@ -64,15 +64,14 @@ local function pingGmodCloud()
   GmodCloud:PrintInfo("Pinging Gmod Cloud")
   
   -- Ping server
-  GmodCloud:PostData("server/ping", getServerPingInformation(), GMODCLOUD_PING_RESP, GMODCLOUD_RESP_FAIL)
+  GmodCloud:PostServerUpdate(getServerPingInformation(), GMODCLOUD_PING_RESP, GMODCLOUD_RESP_FAIL)
 end
 
 
 -- Ping response
 local function onGmodCloudPingResponse(result)
-  local resp = util.JSONToTable(result)
-  if resp.error then
-    GmodCloud:PrintError("[Ping] " .. resp.errorMsg)
+  if result.error then
+    GmodCloud:PrintError("[Ping] " .. result.errorMsg)
   else 
     GmodCloud:Print("[Ping] Successful ping")
   end
@@ -80,13 +79,11 @@ end
 
 -- Whenever the server is first registered on GmodCloud
 local function onGmodCloudServerRegistered(result)
-  GmodCloud:Print("[Init] Got from the server: " .. result)
-  local resp = util.JSONToTable(result)
-  if resp.error then
-    GmodCloud:PrintError(resp.errorMsg)
+  if result.error then
+    GmodCloud:PrintError(result.errorMsg)
   else 
-    GmodCloud:PrintSuccess("Registered! Server ID: " .. resp.serverId)
-    GmodCloud:SetServerInfo(resp.serverId, resp.secretKey)
+    GmodCloud:PrintSuccess("Registered! Server ID: " .. result.serverId)
+    GmodCloud:SetServerInfo(result.serverId, result.secretKey)
     initialized = true
     hook.Run(GMODCLOUD_INIT_COMPLETED)
   end
@@ -94,7 +91,7 @@ end
 
 -- Test function to see if we fail to get data from Gmod Cloud
 local function onGmodCloudRespFail(result)
-  GmodCloud:PrintError("Failed to get response: " .. result)
+  GmodCloud:PrintError("Failed to get response: " .. util.TableToJSON(result))
 end
 
 -- Initialization
@@ -121,7 +118,7 @@ local function initialize()
     GmodCloud:PrintInfo("Attempting to register")
 
     -- Get a server ID
-    GmodCloud:PostData("server/register", getServerPingInformation(), GMODCLOUD_SERVER_REGISTERED, GMODCLOUD_RESP_FAIL)
+    GmodCloud:RegisterServer(getServerPingInformation(), GMODCLOUD_SERVER_REGISTERED, GMODCLOUD_RESP_FAIL) 
   end
 end
 
