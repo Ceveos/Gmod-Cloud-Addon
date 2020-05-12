@@ -6,12 +6,15 @@
 --             Constants             --
 ---------------------------------------
 -- Hook naming/calling constants
-local GMODCLOUD = "GMODCLOUD" -- Used for hook naming
-local GMODCLOUD_INIT = "GMODCLOUD_INIT" -- 
+local GMODCLOUD = "GMODCLOUD"
+local GMODCLOUD_INIT = "GMODCLOUD_INIT"
+local GMODCLOUD_PING_TIMER = "GMODCLOUD_PING_TIMER"
 local GMODCLOUD_SERVER_REGISTERED = "GMODCLOUD_SERVER_REGISTERED" -- fired whenever a server is registered on Gmod Cloud
 local GMODCLOUD_INIT_COMPLETED = "GMODCLOUD_INIT_COMPLETED" -- Hook name for when initializing completed
 local GMODCLOUD_RESP_FAIL = "GMODCLOUD_RESP_FAIL" -- Hook name for when there's an API response failure
-local GMODCLOUD_PING_RESP = "GMODCLOUD_PING_RESP" -- Hook name for when a ping is finished
+local GMODCLOUD_PING_RESP = "GMODCLOUD_PING_RESP" -- Hook name for when a ping response is acquired
+local GMODCLOUD_REQUEST = "GMODCLOUD_REQUEST" -- Hook name for when a request for data arrives
+local GMODCLOUD_RUN_QUEUE = "GMODCLOUD_RUN_QUEUE"
 
 ---------------------------------------
 --            Local Vars             --
@@ -59,6 +62,7 @@ local function getServerPingInformation()
   }
 end
 
+
 -- Called on startup and periodically to ping Gmod Cloud for updates
 local function pingGmodCloud()
   GmodCloud:PrintInfo("Pinging Gmod Cloud")
@@ -67,13 +71,33 @@ local function pingGmodCloud()
   GmodCloud:PostServerUpdate(getServerPingInformation(), GMODCLOUD_PING_RESP, GMODCLOUD_RESP_FAIL)
 end
 
+-- Create  a timer to ping the server
+-- Will run every 10 minutes
+local function createPingTimer()
+  timer.Create( GMODCLOUD_PING_TIMER, 600, 0, function() pingGmodCloud() end )
+end
+
 
 -- Ping response
 local function onGmodCloudPingResponse(result)
   if result.error then
     GmodCloud:PrintError("[Ping] " .. result.errorMsg)
-  else 
-    GmodCloud:Print("[Ping] Successful ping")
+    return
+  end
+
+  GmodCloud:Print("[Ping] Successful ping")
+
+  -- The server will come back with requests if it's looking for data
+  -- We're going to broadcast the request so anyone can listen in and fulfill the request
+  -- Examples of requests:
+  -- - Player Log: Get a list of all currently online players, and other attributes (i.e. # of staff online)
+  if result.request then
+    GmodCloud:Print("[Request] Performing requests")
+    for _, request in ipairs(result.request) do
+      hook.Run(GMODCLOUD_REQUEST, request)
+    end
+    -- Run Queue to ensure we're not blocked (i.e. empty server)
+    hook.Run(GMODCLOUD_RUN_QUEUE, nil)
   end
 end
 
@@ -85,6 +109,7 @@ local function onGmodCloudServerRegistered(result)
     GmodCloud:PrintSuccess("Registered! Server ID: " .. result.serverId)
     GmodCloud:SetServerInfo(result.serverId, result.secretKey)
     initialized = true
+    createPingTimer()
     hook.Run(GMODCLOUD_INIT_COMPLETED)
   end
 end
@@ -112,6 +137,7 @@ local function initialize()
     GmodCloud:PrintInfo("Server registration information found")
     initialized = true
     hook.Run(GMODCLOUD_INIT_COMPLETED)
+    createPingTimer()
   else 
     -- Need to register server on website
     GmodCloud:PrintInfo("Server not registered on GmodCloud")

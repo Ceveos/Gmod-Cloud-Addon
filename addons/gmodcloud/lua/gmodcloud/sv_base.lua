@@ -13,7 +13,13 @@
 ------------------------------------------
 
 -- Data directory
-local BASEDIRECTORY = "GmodCloud/"
+local BASEDIRECTORY = "gmodcloud/"
+local QUEUEDIRECTORY = "queue/"
+
+local dataDirectories = {
+  BASEDIRECTORY,
+  BASEDIRECTORY .. QUEUEDIRECTORY
+}
 
 -- Server info
 local baseApiUrl = "https://gmodcloud.com/api/"
@@ -66,20 +72,40 @@ end
 --             FILE FUNCTIONS           --
 ------------------------------------------
 
-function GmodCloud:FileExists(filename) 
-  return file.Exists(BASEDIRECTORY .. filename, "DATA")
+function GmodCloud:BaseDirectory() 
+  return BASEDIRECTORY
 end
 
-function GmodCloud:ReadFile(filename) 
-  return file.Read(BASEDIRECTORY .. filename, "DATA")
+function GmodCloud:QueueDirectory() 
+  return BASEDIRECTORY .. QUEUEDIRECTORY
 end
 
-function GmodCloud:WriteFile(filename, content)
-  if !file.Exists(BASEDIRECTORY, "DATA") then
-    file.CreateDir(BASEDIRECTORY)
+function GmodCloud:FilesInDirectory(path) 
+  return file.Find(path .. "*", "DATA", "nameasc")
+end
+
+function GmodCloud:FileExists(filename, path) 
+  return file.Exists(path .. filename, "DATA")
+end
+
+function GmodCloud:DeleteFile(filename, path)
+  return file.Delete(path .. filename)
+end
+
+function GmodCloud:ReadFile(filename, path) 
+  return file.Read(path .. filename, "DATA")
+end
+
+function GmodCloud:WriteFile(filename, content, path)
+  -- Create all required directories
+  for i, directory in ipairs(dataDirectories) do
+    if !file.Exists(directory, "DATA") then
+      file.CreateDir(directory)
+    end
   end
 
-  file.Write(BASEDIRECTORY .. filename, content) 
+  -- Write file
+  file.Write(path .. filename, content) 
 end
 
 ------------------------------------------
