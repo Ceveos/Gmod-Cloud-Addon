@@ -370,9 +370,9 @@ local function loadDarkRPEvents()
   hook.Add("playerWalletChanged", GMODCLOUD_EVENT_RECORDER, 
   function(ply, amt, wallet)
     GmodCloud:CaptureEvent("playerWalletChanged", {
-      steamId: ply:SteamID(),
-      amount: amt,
-      wallet: wallet
+      steamId = ply:SteamID(),
+      amount = amt,
+      wallet = wallet
     })
   end)
 

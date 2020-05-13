@@ -172,14 +172,15 @@ function (ply)
   })
 end)
 
-hook.Add("PlayerSwitchWeapon", GMODCLOUD_EVENT_RECORDER, 
-function (ply, oldWeapon, newWeapon)
-  GmodCloud:CaptureEvent("PlayerSwitchWeapon", {
-    steamId = ply:SteamID(),
-    oldWeapon = oldWeapon and oldWeapon:IsValid() and oldWeapon:GetClass(),
-    newWeapon = newWeapon and newWeapon:IsValid() and newWeapon:GetClass()
-  })
-end)
+-- Too noisy
+-- hook.Add("PlayerSwitchWeapon", GMODCLOUD_EVENT_RECORDER, 
+-- function (ply, oldWeapon, newWeapon)
+--   GmodCloud:CaptureEvent("PlayerSwitchWeapon", {
+--     steamId = ply:SteamID(),
+--     oldWeapon = oldWeapon and oldWeapon:IsValid() and oldWeapon:GetClass(),
+--     newWeapon = newWeapon and newWeapon:IsValid() and newWeapon:GetClass()
+--   })
+-- end)
 
 hook.Add("PropBreak", GMODCLOUD_EVENT_RECORDER, 
 function (ply, prop)
