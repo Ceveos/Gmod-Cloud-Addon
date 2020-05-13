@@ -45,7 +45,7 @@ local function shouldUploadEvents()
   return false
 end
 
--- Will be ran periodically, and via the captureEvent function
+-- Will be ran periodically, and via the GmodCloud:CaptureEvent function
 -- If it is determined that we should upload our current list
 -- of events, it will do so.
 local function eventUploadManager()
@@ -79,14 +79,121 @@ timer.Create(GMODCLOUD_EVENT_MANAGER, 30, 0, function() eventUploadManager() end
 -- events happening in the game and store  --
 -- it for upload.                          --
 ---------------------------------------------
-local function captureEvent(eventName, attributes)
+function GmodCloud:CaptureEvent(eventName, attributes)
   GmodCloud:Print("Captured event - " .. eventName)
   eventsToBeUploaded[#eventsToBeUploaded + 1] = {
     eventName = eventName,
-    attributes = util.TableToJSON(attributes)
+    attributes = util.TableToJSON(attributes),
+    timestamp = os.time()
   }
   eventUploadManager()
 end
+
+hook.Add("OnPlayerChat", GMODCLOUD_EVENT_RECORDER, 
+function(ply, strText, bTeamOnly, bPlayerIsDead)
+  GmodCloud:CaptureEvent("OnPlayerChat", {
+    steamId = ply:SteamID(),
+    text = strText,
+    isTeams = bTeamOnly,
+    isDead = bPlayerIsDead,
+  })
+end)
+
+hook.Add("PlayerAuthed", GMODCLOUD_EVENT_RECORDER, 
+function (ply, steamid, uniqueid)
+  GmodCloud:CaptureEvent("PlayerAuthed", {
+    steamId = steamid
+  })
+end)
+
+hook.Add("PlayerDeath", GMODCLOUD_EVENT_RECORDER, 
+function (victim, inflictor, attacker)
+  GmodCloud:CaptureEvent("PlayerDeath", {
+    victim = victim:SteamID(),
+    attacker = attacker:SteamID(),
+    inflictor = inflictor and inflictor:IsValid() and inflictor:GetClass(),
+    suicide = victim == attacker
+  })
+end)
+
+
+hook.Add("PlayerDisconnected", GMODCLOUD_EVENT_RECORDER, 
+function (ply)
+  GmodCloud:CaptureEvent("PlayerDisconnected", {
+    steamId = ply:SteamID()
+  })
+end)
+
+hook.Add("PlayerHurt", GMODCLOUD_EVENT_RECORDER, 
+function (victim, attacker, healthRemaining, damageTaken)
+  if (attacker:IsPlayer()) then
+    GmodCloud:CaptureEvent("PlayerHurt", {
+      victim = victim:SteamID(),
+      attacker = attacker:SteamID(),
+      healthRemaining = healthRemaining,
+      damageTaken = damageTaken
+    })
+  elseif (attacker:IsWorld()) then
+    GmodCloud:CaptureEvent("PlayerHurt", {
+      victim = victim:SteamID(),
+      attacker = "World",
+      healthRemaining = healthRemaining,
+      damageTaken = damageTaken
+    })
+  else 
+    GmodCloud:CaptureEvent("PlayerHurt", {
+      victim = victim:SteamID(),
+      attacker = attacker:GetName(),
+      healthRemaining = healthRemaining,
+      damageTaken = damageTaken
+    })
+  end
+end)
+
+hook.Add("PlayerLeaveVehicle", GMODCLOUD_EVENT_RECORDER, 
+function (ply, veh)
+  GmodCloud:CaptureEvent("PlayerLeaveVehicle", {
+    steamId = ply:SteamID(),
+    vehicle = veh and veh:IsValid() and veh:GetClass()
+  })
+end)
+
+hook.Add("PlayerSilentDeath", GMODCLOUD_EVENT_RECORDER, 
+function (ply)
+  GmodCloud:CaptureEvent("PlayerSilentDeath", {
+    steamId = ply:SteamID()
+  })
+end)
+
+hook.Add("PlayerSpawn", GMODCLOUD_EVENT_RECORDER, 
+function (ply)
+  GmodCloud:CaptureEvent("PlayerSpawn", {
+    steamId = ply:SteamID()
+  })
+end)
+
+hook.Add("PlayerSwitchWeapon", GMODCLOUD_EVENT_RECORDER, 
+function (ply, oldWeapon, newWeapon)
+  GmodCloud:CaptureEvent("PlayerSwitchWeapon", {
+    steamId = ply:SteamID(),
+    oldWeapon = oldWeapon and oldWeapon:IsValid() and oldWeapon:GetClass(),
+    newWeapon = newWeapon and newWeapon:IsValid() and newWeapon:GetClass()
+  })
+end)
+
+hook.Add("PropBreak", GMODCLOUD_EVENT_RECORDER, 
+function (ply, prop)
+  GmodCloud:CaptureEvent("PropBreak", {
+    steamId = ply:SteamID(),
+    prop = prop and prop:IsValid() and prop:GetClass()
+  })
+end)
+
+hook.Add("ShutDown", GMODCLOUD_EVENT_RECORDER, 
+function ()
+  GmodCloud:CaptureEvent("ShutDown", {})
+end)
+-------------------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------
 --                    player_connect                   --
@@ -99,8 +206,8 @@ end
 -- - address: string (IP Address)
 ---------------------------------------------------------
 gameevent.Listen( "player_connect" )
-hook.Add("player_connect", "AnnounceConnection", function( data )
-  captureEvent("player_connect", {
+hook.Add("player_connect", GMODCLOUD_EVENT_RECORDER, function( data )
+  GmodCloud:CaptureEvent("player_connect", {
     bot = (data.bot == 1),
     steamId = data.networkid,
     name = data.name,
@@ -119,7 +226,7 @@ end)
 ---------------------------------------------------------
 gameevent.Listen( "player_disconnect" )
 hook.Add("player_disconnect", GMODCLOUD_EVENT_RECORDER, function( data )
-  captureEvent("player_disconnect", {
+  GmodCloud:CaptureEvent("player_disconnect", {
     bot = (data.bot == 1),
     steamId = data.networkid,
     name = data.name,
@@ -127,36 +234,6 @@ hook.Add("player_disconnect", GMODCLOUD_EVENT_RECORDER, function( data )
   })
 end)
 
----------------------------------------------------------
---                     player_spawn                    --
----------------------------------------------------------
--- - userid: number
----------------------------------------------------------
-gameevent.Listen( "player_spawn" )
-hook.Add("player_spawn", GMODCLOUD_EVENT_RECORDER, function( data )
-  captureEvent("player_spawn", {
-    steamId = data.networkid,
-  })
-end)
-
-
----------------------------------------------------------
---                      player_hurt                    --
----------------------------------------------------------
--- - health: number
--- - priority: number
--- - userid: number -- User ID of the victim
--- - attacker: number -- User ID of the attacker
----------------------------------------------------------
-gameevent.Listen( "player_hurt" )
-hook.Add("player_hurt", GMODCLOUD_EVENT_RECORDER, function( data )
-  captureEvent("player_hurt", {
-    health = data.health,
-    priority = data.priority,
-    victim = data.userid,
-    attacker = data.attacker
-  })
-end)
 
 ---------------------------------------------------------
 --                       player_say                    --
@@ -167,7 +244,7 @@ end)
 ---------------------------------------------------------
 gameevent.Listen( "player_say" )
 hook.Add("player_say", GMODCLOUD_EVENT_RECORDER, function( data )
-  captureEvent("player_say", {
+  GmodCloud:CaptureEvent("player_say", {
     priority = data.priority,
     userid = data.userid,
     text = data.text
@@ -183,7 +260,7 @@ end)
 ---------------------------------------------------------
 gameevent.Listen( "player_changename" )
 hook.Add("player_changename", GMODCLOUD_EVENT_RECORDER, function( data )
-  captureEvent("player_changename", {
+  GmodCloud:CaptureEvent("player_changename", {
     userid = data.userid,
     oldName = data.oldname,
     newName = data.newname
@@ -198,7 +275,7 @@ end)
 ---------------------------------------------------------
 gameevent.Listen( "server_cvar" )
 hook.Add("server_cvar", GMODCLOUD_EVENT_RECORDER, function( data )
-  captureEvent("server_cvar", {
+  GmodCloud:CaptureEvent("server_cvar", {
     cvarname = data.cvarname,
     cvarvalue = data.cvarvalue
   })
