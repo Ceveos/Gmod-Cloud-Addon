@@ -38,7 +38,7 @@ local function shouldUploadEvents()
   end
 
   -- If it's been 5 minutes since our last upload, upload
-  if os.difftime( os.time(), lastUploadTime ) > 5 then --  300 then
+  if os.difftime( os.time(), lastUploadTime ) > 300 then
     return true
   end
 
