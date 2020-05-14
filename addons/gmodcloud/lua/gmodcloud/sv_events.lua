@@ -110,7 +110,7 @@ hook.Add("PlayerDeath", GMODCLOUD_EVENT_RECORDER,
 function (victim, inflictor, attacker)
   GmodCloud:CaptureEvent("PlayerDeath", {
     victim = victim:SteamID(),
-    attacker = attacker:SteamID(),
+    attacker = (attacker:IsPlayer() and attacker:SteamID()) or attacker:GetClass(),
     inflictor = inflictor and inflictor:IsValid() and inflictor:GetClass(),
     suicide = victim == attacker
   })
