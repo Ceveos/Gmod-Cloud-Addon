@@ -57,6 +57,7 @@ local function getServerPingInformation()
     serverName = GetHostName(),                 -- REQUIRED
     ip = game.GetIPAddress(),                   -- REQUIRED
     maxPlayers = tostring(game.MaxPlayers()),   -- REQUIRED
+    players = tostring(player.GetCount()),      -- REQUIRED
     gameMode = gmod.GetGamemode().Name,         -- REQUIRED
     map = game.GetMap()                         -- REQUIRED
   }

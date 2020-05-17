@@ -98,14 +98,6 @@ local function loadDarkRPEvents()
     })
   end)
 
-  hook.Add("onNotify", GMODCLOUD_EVENT_RECORDER, 
-  function(ply, msgType, msgLen, message)
-    GmodCloud:CaptureEvent("onNotify", {
-      steamId = ply:SteamID(),
-      message = message
-    })
-  end)
-
   hook.Add("onPaidTax", GMODCLOUD_EVENT_RECORDER, 
   function(ply, tax, wallet)
     GmodCloud:CaptureEvent("onPaidTax", {
