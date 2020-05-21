@@ -15,6 +15,9 @@
 ------------------------------------------
 local GMODCLOUD_EVENT_RECORDER = "GMODCLOUD_EVENT_RECORDER"
 local GMODCLOUD_EVENT_MANAGER = "GMODCLOUD_EVENT_MANAGER"
+local GMODCLOUD_INIT_COMPLETED = "GMODCLOUD_INIT_COMPLETED"
+local GMODCLOUD_WEBSOCKET_START_LIVE_STREAM = "GMODCLOUD_WS_START_LIVE_STREAM"
+local GMODCLOUD_WEBSOCKET_STOP_LIVE_STREAM = "GMODCLOUD_WS_STOP_LIVE_STREAM"
 
 ------------------------------------------
 --               LOCAL VAR              --
@@ -31,6 +34,11 @@ local function shouldUploadEvents()
   if #eventsToBeUploaded == 0 then
     return false
   end
+
+  -- If streaming events, upload
+  if GmodCloud:Should_Stream_Events() then
+    return true
+  end
   
   -- If we have 100 new events, upload
   if #eventsToBeUploaded >= 100 then
@@ -45,7 +53,7 @@ local function shouldUploadEvents()
   return false
 end
 
--- Will be ran periodically, and via the GmodCloud:CaptureEvent function
+-- Will be ran periodically via the GmodCloud:CaptureEvent function.
 -- If it is determined that we should upload our current list
 -- of events, it will do so.
 local function eventUploadManager()
@@ -53,26 +61,56 @@ local function eventUploadManager()
     return
   end
 
-  GmodCloud:Print("Uploading captured events")
-  
-  -- If GmodCloud is requesting player log
-
-  -- Set our root fields that we'll be sending to server
-  local rootFields = {
-    events =  util.TableToJSON(eventsToBeUploaded)
-  }
+  local events = util.TableToJSON(eventsToBeUploaded)
+ 
   -- Reset our events array
   eventsToBeUploaded = {}
   lastUploadTime = os.time()
 
-  rootFields.attributes = {}
+  if GmodCloud:Should_Stream_Events() then
+    GmodCloud:Print("Streaming events")
+    GmodCloud:StreamEvent(events)
+  else
+    GmodCloud:Print("Uploading captured events")
 
-  -- Send it off to GmodCloud
-  GmodCloud:PostServerLog("Events", rootFields)
+    -- Set our root fields that we'll be sending to server
+    local rootFields = {
+      events =  events
+    }
+
+    rootFields.attributes = {}
+
+    -- Send it off to GmodCloud
+    GmodCloud:PostServerLog("Events", rootFields)
+  end
 end
 
--- Run eventUploadManager every 30 seconds
-timer.Create(GMODCLOUD_EVENT_MANAGER, 30, 0, function() eventUploadManager() end)
+local function onStartWebsocketStreaming()
+  GmodCloud:PrintInfo("Started livestreaming events")
+  timer.Destroy(GMODCLOUD_EVENT_MANAGER)
+  -- With timer destroyed, events may be queued up
+  -- Stream them now
+  eventUploadManager()
+end
+
+local function onStopWebsocketStreaming()
+  GmodCloud:PrintInfo("No longer livestreaming events")
+  timer.Create(GMODCLOUD_EVENT_MANAGER, 30, 0, function() eventUploadManager() end)
+end
+
+-- Once init is completed, run our event manager
+local function onInitCompleted()
+  -- Run eventUploadManager every 30 seconds
+  -- Only run if we're not streaming events via websockets
+  if GmodCloud:Should_Stream_Events() == false then
+    -- To reduce code duplication, run function that creates timer
+    onStopWebsocketStreaming()
+  end
+end
+
+hook.Add(GMODCLOUD_INIT_COMPLETED, GMODCLOUD_EVENT_MANAGER, onInitCompleted)
+hook.Add(GMODCLOUD_WEBSOCKET_START_LIVE_STREAM, GMODCLOUD_EVENT_MANAGER, onStartWebsocketStreaming)
+hook.Add(GMODCLOUD_WEBSOCKET_STOP_LIVE_STREAM, GMODCLOUD_EVENT_MANAGER, onStopWebsocketStreaming)
 
 ---------------------------------------------
 -- This function will capture all relevant --

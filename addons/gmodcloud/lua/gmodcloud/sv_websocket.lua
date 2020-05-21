@@ -40,16 +40,38 @@ local GMODCLOUD_WEBSOCKET_SERVER_ROOM_STATUS = GMODCLOUD_WEBSOCKET_PREFIX .. Ser
 local GMODCLOUD_WEBSOCKET_SERVER_ERROR = GMODCLOUD_WEBSOCKET_PREFIX .. Error
 
 ---------------------------------------
+--            SHARED HOOKS           --
+---------------------------------------
+local GMODCLOUD_WEBSOCKET_START_LIVE_STREAM = GMODCLOUD_WEBSOCKET_PREFIX .. "START_LIVE_STREAM"
+local GMODCLOUD_WEBSOCKET_STOP_LIVE_STREAM = GMODCLOUD_WEBSOCKET_PREFIX .. "STOP_LIVE_STREAM"
+
+
+---------------------------------------
 --             Local vars            --
 ---------------------------------------
 local serverId = nil
 local socket = GWSockets.createWebSocket("wss://ws.gmodcloud.com/")
 local serverRoomEmpty = true
 
-function GmodCloud:Websocket_Is_Empty() 
-  return serverRoomEmpty
+
+---------------------------------------
+--          Public Functions         --
+---------------------------------------
+-- Should we stream gmod events live?
+function GmodCloud:Should_Stream_Events() 
+  return !serverRoomEmpty
 end
 
+function GmodCloud:StreamEvent(events)
+  socket:write(util.TableToJSON({
+    type = "ServerEvent",
+    events = events
+  },false))
+end
+
+---------------------------------------
+--           Local Functions         --
+---------------------------------------
 function socket:onMessage(txt)
   local resp = util.JSONToTable(txt);
   if resp == nill || resp.type == nil then 
@@ -122,8 +144,12 @@ end
 local function onServerRoomEmpty(socket, isEmpty)
   if isEmpty then
     GmodCloud:Print(string.format("[WebSocket] Server room is empty"))
+    serverRoomEmpty = true
+    hook.Run(GMODCLOUD_WEBSOCKET_STOP_LIVE_STREAM)
   else
     GmodCloud:Print(string.format("[WebSocket] Server room is not empty"))
+    serverRoomEmpty = false
+    hook.Run(GMODCLOUD_WEBSOCKET_START_LIVE_STREAM)
   end
 end
 
