@@ -28,6 +28,7 @@ include("gmodcloud/sv_helpers.lua")
 include("gmodcloud/sv_requests.lua")
 include("gmodcloud/sv_queue.lua")
 include("gmodcloud/sv_events.lua")
+include("gmodcloud/sv_websocket.lua")
 include("gmodcloud/sv_init.lua")
 
 loadLuaFilesInDirectory("gmodcloud/gamemodes/")
