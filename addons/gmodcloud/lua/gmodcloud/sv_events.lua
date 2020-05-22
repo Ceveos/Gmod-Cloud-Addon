@@ -86,7 +86,7 @@ local function eventUploadManager()
 end
 
 local function onStartWebsocketStreaming()
-  GmodCloud:PrintInfo("Started livestreaming events")
+  GmodCloud:PrintInfo("Livestreaming events")
   timer.Destroy(GMODCLOUD_EVENT_MANAGER)
   -- With timer destroyed, events may be queued up
   -- Stream them now
@@ -94,7 +94,7 @@ local function onStartWebsocketStreaming()
 end
 
 local function onStopWebsocketStreaming()
-  GmodCloud:PrintInfo("No longer livestreaming events")
+  GmodCloud:PrintInfo("Polling events")
   timer.Create(GMODCLOUD_EVENT_MANAGER, 30, 0, function() eventUploadManager() end)
 end
 
