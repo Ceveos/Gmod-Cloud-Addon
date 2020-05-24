@@ -275,18 +275,15 @@ end)
 
 
 ---------------------------------------------------------
---                       player_say                    --
+--                        PlayerSay                    --
 ---------------------------------------------------------
--- - priority: number
--- - userid: number
+-- - ply: Player
 -- - text: string
 ---------------------------------------------------------
-gameevent.Listen( "player_say" )
-hook.Add("player_say", GMODCLOUD_EVENT_RECORDER, function( data )
-  GmodCloud:CaptureEvent("player_say", {
-    priority = data.priority,
-    userid = data.userid,
-    text = data.text
+hook.Add("PlayerSay", GMODCLOUD_EVENT_RECORDER, function( ply, text )
+  GmodCloud:CaptureEvent("PlayerSay", {
+    steamId = (ply == nil && nil) or (ply:IsPlayer() and ply:SteamID()) or ply:GetClass(),
+    text = text
   })
 end)
 
@@ -299,8 +296,9 @@ end)
 ---------------------------------------------------------
 gameevent.Listen( "player_changename" )
 hook.Add("player_changename", GMODCLOUD_EVENT_RECORDER, function( data )
+  local ply = player.GetByID(data.userid)
   GmodCloud:CaptureEvent("player_changename", {
-    userid = data.userid,
+    steamId = (ply == nil && nil) or (ply:IsPlayer() and ply:SteamID()) or ply:GetClass(),
     oldName = data.oldname,
     newName = data.newname
   })
