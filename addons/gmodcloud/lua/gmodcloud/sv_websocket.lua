@@ -24,6 +24,7 @@ local ServerRoomEmpty = "ServerRoomEmpty"
 local InitSuccess = "InitSuccess"
 local InitFail = "InitFail"
 local Error = "Error"
+local ClientChatMessage = "ClientChatMessage"
 
 ---------------------------------------
 --             Constants             --
@@ -38,6 +39,7 @@ local GMODCLOUD_WEBSOCKET_SERVER_INIT_SUCCESS = GMODCLOUD_WEBSOCKET_PREFIX .. In
 local GMODCLOUD_WEBSOCKET_SERVER_INIT_FAIL = GMODCLOUD_WEBSOCKET_PREFIX .. InitFail
 local GMODCLOUD_WEBSOCKET_SERVER_ROOM_STATUS = GMODCLOUD_WEBSOCKET_PREFIX .. ServerRoomEmpty
 local GMODCLOUD_WEBSOCKET_SERVER_ERROR = GMODCLOUD_WEBSOCKET_PREFIX .. Error
+local GMODCLOUD_WEBSOCKET_SERVER_CLIENTCHATMESSAGE = GMODCLOUD_WEBSOCKET_PREFIX .. ClientChatMessage
 
 ---------------------------------------
 --            SHARED HOOKS           --
@@ -45,11 +47,13 @@ local GMODCLOUD_WEBSOCKET_SERVER_ERROR = GMODCLOUD_WEBSOCKET_PREFIX .. Error
 local GMODCLOUD_WEBSOCKET_START_LIVE_STREAM = GMODCLOUD_WEBSOCKET_PREFIX .. "START_LIVE_STREAM"
 local GMODCLOUD_WEBSOCKET_STOP_LIVE_STREAM = GMODCLOUD_WEBSOCKET_PREFIX .. "STOP_LIVE_STREAM"
 
+local GMODCLOUD_WEB_CHAT_MESSAGE = "GMODCLOUD_WEB_CHAT_MESSAGE"
 
 ---------------------------------------
 --             Local vars            --
 ---------------------------------------
 local serverId = nil
+local secretKey = nil
 local socket = GWSockets.createWebSocket("wss://ws.gmodcloud.com/")
 local serverRoomEmpty = true
 
@@ -91,7 +95,8 @@ function socket:onConnected()
   
   socket:write(util.TableToJSON({
     type = "ServerInit",
-    serverId = serverId
+    serverId = serverId,
+    secretKey = secretKey
   },false))
 end
 
@@ -115,6 +120,7 @@ local function onInitCompleted()
   end
 
   serverId = serverInfo.serverId
+  secretKey = serverInfo.secretKey
 
   -- Run every 5 seconds
   timer.Create(GMODCLOUD_WEBSOCKET, 5, 0, function() attemptConnection() end)
@@ -154,6 +160,18 @@ local function onServerRoomEmpty(socket, isEmpty)
 end
 
 
+local function onClientChatMessage(socket, data)
+  GmodCloud:CaptureEvent("PlayerSay", {
+    steamId = data.from,
+    text = data.message,
+    web = true
+  })
+  net.Start(GMODCLOUD_WEB_CHAT_MESSAGE)
+    net.WriteString(data.displayName)
+    net.WriteString(data.message)
+  net.Broadcast()
+end
+
 local function onServerError(socket, data)
   GmodCloud:PrintError("[WebSocket] Error: " .. data)
 end
@@ -162,6 +180,8 @@ hook.Add(GMODCLOUD_INIT_COMPLETED, GMODCLOUD_WEBSOCKET, onInitCompleted)
 hook.Add(GMODCLOUD_WEBSOCKET_HEARTBEAT, GMODCLOUD_WEBSOCKET, onHeartbeat)
 hook.Add(GMODCLOUD_WEBSOCKET_SERVER_INIT_SUCCESS, GMODCLOUD_WEBSOCKET, onServerInitSuccess)
 hook.Add(GMODCLOUD_WEBSOCKET_SERVER_INIT_FAIL, GMODCLOUD_WEBSOCKET, onServerInitFail)
-hook.Add(GMODCLOUD_WEBSOCKET_SERVER_ERROR, GMODCLOUD_WEBSOCKET, onServerError)
 hook.Add(GMODCLOUD_WEBSOCKET_SERVER_ROOM_STATUS, GMODCLOUD_WEBSOCKET, onServerRoomEmpty)
+hook.Add(GMODCLOUD_WEBSOCKET_SERVER_CLIENTCHATMESSAGE, GMODCLOUD_WEBSOCKET, onClientChatMessage)
+hook.Add(GMODCLOUD_WEBSOCKET_SERVER_ERROR, GMODCLOUD_WEBSOCKET, onServerError)
 
+util.AddNetworkString(GMODCLOUD_WEB_CHAT_MESSAGE)

@@ -283,7 +283,8 @@ end)
 hook.Add("PlayerSay", GMODCLOUD_EVENT_RECORDER, function( ply, text )
   GmodCloud:CaptureEvent("PlayerSay", {
     steamId = (ply == nil && nil) or (ply:IsPlayer() and ply:SteamID()) or ply:GetClass(),
-    text = text
+    text = text,
+    web = false
   })
 end)
 
