@@ -162,31 +162,6 @@ function (ply)
   })
 end)
 
-hook.Add("PlayerHurt", GMODCLOUD_EVENT_RECORDER, 
-function (victim, attacker, healthRemaining, damageTaken)
-  if (attacker:IsPlayer()) then
-    GmodCloud:CaptureEvent("PlayerHurt", {
-      victim = victim:SteamID(),
-      attacker = attacker:SteamID(),
-      healthRemaining = healthRemaining,
-      damageTaken = damageTaken
-    })
-  elseif (attacker:IsWorld()) then
-    GmodCloud:CaptureEvent("PlayerHurt", {
-      victim = victim:SteamID(),
-      attacker = "World",
-      healthRemaining = healthRemaining,
-      damageTaken = damageTaken
-    })
-  else 
-    GmodCloud:CaptureEvent("PlayerHurt", {
-      victim = victim:SteamID(),
-      attacker = attacker:GetName(),
-      healthRemaining = healthRemaining,
-      damageTaken = damageTaken
-    })
-  end
-end)
 
 hook.Add("PlayerLeaveVehicle", GMODCLOUD_EVENT_RECORDER, 
 function (ply, veh)
@@ -209,16 +184,6 @@ function (ply)
     steamId = ply:SteamID()
   })
 end)
-
--- Too noisy
--- hook.Add("PlayerSwitchWeapon", GMODCLOUD_EVENT_RECORDER, 
--- function (ply, oldWeapon, newWeapon)
---   GmodCloud:CaptureEvent("PlayerSwitchWeapon", {
---     steamId = ply:SteamID(),
---     oldWeapon = oldWeapon and oldWeapon:IsValid() and oldWeapon:GetClass(),
---     newWeapon = newWeapon and newWeapon:IsValid() and newWeapon:GetClass()
---   })
--- end)
 
 hook.Add("PropBreak", GMODCLOUD_EVENT_RECORDER, 
 function (ply, prop)

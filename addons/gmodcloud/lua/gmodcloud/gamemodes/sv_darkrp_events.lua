@@ -359,15 +359,6 @@ local function loadDarkRPEvents()
     })
   end)
 
-  hook.Add("playerWalletChanged", GMODCLOUD_EVENT_RECORDER, 
-  function(ply, amt, wallet)
-    GmodCloud:CaptureEvent("playerWalletChanged", {
-      steamId = ply:SteamID(),
-      amount = amt,
-      wallet = wallet
-    })
-  end)
-
   hook.Add("playerWanted", GMODCLOUD_EVENT_RECORDER, 
   function(criminal, actor, reason)
     GmodCloud:CaptureEvent("playerWanted", {

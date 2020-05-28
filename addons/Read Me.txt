@@ -1,0 +1,3 @@
+Please refer to the docs at https://gmodcloud.com/docs/getting-started
+
+This will instruct you on how to proceed with installation.
