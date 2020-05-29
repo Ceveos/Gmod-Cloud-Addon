@@ -54,6 +54,7 @@ local GMODCLOUD_WEB_CHAT_MESSAGE = "GMODCLOUD_WEB_CHAT_MESSAGE"
 ---------------------------------------
 local serverId = nil
 local secretKey = nil
+local version = nil
 local socket = GWSockets.createWebSocket("wss://ws.gmodcloud.com/")
 local serverRoomEmpty = true
 
@@ -96,7 +97,8 @@ function socket:onConnected()
   socket:write(util.TableToJSON({
     type = "ServerInit",
     serverId = serverId,
-    secretKey = secretKey
+    secretKey = secretKey,
+    version = version
   },false))
 end
 
@@ -121,6 +123,7 @@ local function onInitCompleted()
 
   serverId = serverInfo.serverId
   secretKey = serverInfo.secretKey
+  version = serverInfo.version
 
   -- Run every 5 seconds
   timer.Create(GMODCLOUD_WEBSOCKET, 5, 0, function() attemptConnection() end)

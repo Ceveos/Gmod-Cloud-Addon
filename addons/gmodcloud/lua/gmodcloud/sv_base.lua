@@ -15,10 +15,12 @@
 -- Data directory
 local BASEDIRECTORY = "gmodcloud/"
 local QUEUEDIRECTORY = "queue/"
+local PLAYERDIRECTORY = "player/"
 
 local dataDirectories = {
   BASEDIRECTORY,
-  BASEDIRECTORY .. QUEUEDIRECTORY
+  BASEDIRECTORY .. QUEUEDIRECTORY,
+  BASEDIRECTORY .. PLAYERDIRECTORY
 }
 
 -- Server info
@@ -36,6 +38,10 @@ function GmodCloud:QueueDirectory()
   return BASEDIRECTORY .. QUEUEDIRECTORY
 end
 
+function GmodCloud:PlayerDirectory() 
+  return BASEDIRECTORY .. QUEUEDIRECTORY
+end
+
 function GmodCloud:FilesInDirectory(path) 
   return file.Find(path .. "*", "DATA", "nameasc")
 end
@@ -49,7 +55,11 @@ function GmodCloud:DeleteFile(filename, path)
 end
 
 function GmodCloud:ReadFile(filename, path) 
-  return file.Read(path .. filename, "DATA")
+  if GmodCloud:FileExists(filename, path) then
+    return file.Read(path .. filename, "DATA")
+  else
+    return nil
+  end
 end
 
 function GmodCloud:WriteFile(filename, content, path)
