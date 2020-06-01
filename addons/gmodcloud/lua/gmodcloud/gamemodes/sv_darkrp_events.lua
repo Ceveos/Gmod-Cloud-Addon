@@ -269,14 +269,6 @@ local function loadDarkRPEvents()
     })
   end)
 
-  hook.Add("playerGetSalary", GMODCLOUD_EVENT_RECORDER, 
-  function(ply, amt)
-    GmodCloud:CaptureEvent("playerGetSalary", {
-      ply = ply:SteamID(),
-      amount = amt
-    })
-  end)
-
   hook.Add("playerKeysSold", GMODCLOUD_EVENT_RECORDER, 
   function(ply, ent, refund)
     GmodCloud:CaptureEvent("playerKeysSold", {

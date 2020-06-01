@@ -11,7 +11,7 @@
 -- 3 - errors  -- Only show errors
 -- 4 - off     -- Turn off all logging
 -----------------
-GmodCloud.DebugLevel = 0
+GmodCloud.DebugLevel = 1
 
 
 ------------------------------------------
