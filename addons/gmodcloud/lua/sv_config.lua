@@ -31,7 +31,7 @@ GmodCloud.ServerInfo = {
   -- Please file a ticket if you need this changed
   owner = "76561197989847517", -- Temp
   apiKey = "136e1d9a68e5501171b6", -- Temp
-  version = "1.0.0.0"
+  version = "1.0.0.1"
   --owner = "{{ user_id }}",
   --apiKey = "{{ web_hook "https://gmodcloud.com/api/gmodstore/get/key" "DZ83UWa2mt8HY4" }}"
 } 

@@ -190,6 +190,9 @@ if gwsockets then
 
   local function onServerConsoleCommand(socket, data)
     GmodCloud:Print("Running console command " .. data.command)
+    for i, arg in pairs(data.args) do
+      data.args[i] = string.Replace(arg, "%M", game.GetMap())
+    end
     RunConsoleCommand(data.command, unpack(data.args))
   end
 
