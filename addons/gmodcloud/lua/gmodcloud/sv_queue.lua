@@ -28,6 +28,20 @@ local lastFile = nil
 ---------------------------------------
 --            Queue Logic            --
 ---------------------------------------
+local function QueueTimerElapsed()
+  if GmodCloud:IsQueueEmpty() or midQueue == true then
+    return
+  end
+
+  local fileToSend = GmodCloud:GrabQueuedFile()
+  local content = util.JSONToTable(GmodCloud:ReadFile(fileToSend, GmodCloud:QueueDirectory()))
+  
+  midQueue = true
+  lastFile = fileToSend
+
+  -- Attempt to POST data
+  GmodCloud:PostData(content.url, util.JSONToTable(content.params), GMODCLOUD_QUEUE_SUCCESS, GMODCLOUD_QUEUE_FAIL) 
+end
 
 local function onQueuePostSuccess (result)
   GmodCloud:Print("Successfully performed queued action")
@@ -51,20 +65,7 @@ local function onQueuePostFail (result)
   end
 end
 
-local function QueueTimerElapsed()
-  if GmodCloud:IsQueueEmpty() or midQueue == true then
-    return
-  end
 
-  local fileToSend = GmodCloud:GrabQueuedFile()
-  local content = util.JSONToTable(GmodCloud:ReadFile(fileToSend, GmodCloud:QueueDirectory()))
-  
-  midQueue = true
-  lastFile = fileToSend
-
-  -- Attempt to POST data
-  GmodCloud:PostData(content.url, util.JSONToTable(content.params), GMODCLOUD_QUEUE_SUCCESS, GMODCLOUD_QUEUE_FAIL) 
-end
 
 local function onInitCompleted()
   GmodCloud:Print("Creating Queue timer")
