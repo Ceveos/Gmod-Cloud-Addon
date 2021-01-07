@@ -40,7 +40,6 @@ include("gmodcloud/sv_events.lua")          -- Capture events that occur in game
 include("gmodcloud/sv_playerlog.lua")       -- Capture player info as they connect/disconnect from server
 include("gmodcloud/sv_init.lua")            -- Initialize the plugin / connects to GmodCloud
 
-loadLuaFilesInDirectory("gmodcloud/gamemodes/")
 loadLuaFilesInDirectory("gmodcloud/modules/")
 
 
